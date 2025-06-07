@@ -154,7 +154,8 @@ export function JaimeAssistant() {
   }, [error]);
 
   const handleSendMessage = (content: string) => {
-    if (!content.trim()) return
+    // Validate input and check if already loading
+    if (!content.trim() || isLoading || aiLoading) return;
     
     // Clear any previous errors
     setErrorMessage(null);
@@ -173,6 +174,11 @@ export function JaimeAssistant() {
       
       // Clear the input field after sending
       setInputValue("");
+      
+      // Focus back on the input field for better UX
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     } catch (err) {
       console.error("Error submitting message:", err);
       setErrorMessage(`Failed to send message: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -747,16 +753,23 @@ export function JaimeAssistant() {
               placeholder="Type here in any language or use audio mode..."
               className="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 text-sm"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && inputValue.trim() && !isLoading) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSendMessage(inputValue);
+                  // Only proceed if we have text and aren't already loading
+                  if (inputValue.trim() && !isLoading && !aiLoading) {
+                    handleSendMessage(inputValue);
+                  }
                 }
               }}
-              disabled={isLoading}
+              disabled={isLoading || aiLoading}
             />
           <div className="flex items-center space-x-2">
             <AudioButton onClick={handleVoiceToggle} />
-            <SendTextButton hasText={inputValue.trim().length > 0} onClick={() => handleSendMessage(inputValue)} disabled={isLoading} />
+            <SendTextButton 
+              hasText={inputValue.trim().length > 0} 
+              onClick={() => handleSendMessage(inputValue)} 
+              disabled={isLoading || aiLoading} 
+            />
           </div>
         </div>
         {errorMessage && (
