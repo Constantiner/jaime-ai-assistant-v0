@@ -458,11 +458,9 @@ export function JaimeAssistant() {
 
                 {status === "submitted" && formattedMessages.length > 0 && 
                  formattedMessages[formattedMessages.length - 1].role === "user" && (
-                  <div className="flex items-start space-x-2 animate-pulse">
-                    <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-slate-300">AI</span>
-                    </div>
-                    <div className="text-slate-400">Thinking...</div>
+                  <div className="flex items-center space-x-2 animate-pulse">
+                    <div className="w-4 h-4 bg-white rounded-full"></div>
+                    <div className="text-white">Writing...</div>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
