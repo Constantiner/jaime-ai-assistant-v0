@@ -351,7 +351,15 @@ export function JaimeAssistant() {
           )}
 
           {/* Chat Messages */}
-          <div className={cn("flex-1 overflow-y-auto", isExpanded ? "p-6" : "p-4")}>
+          <div 
+            className={cn("flex-1 overflow-y-auto relative", isExpanded ? "p-6" : "p-4")}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='146' height='230' viewBox='0 0 146 230' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M73.0382 130.486L43.6858 159.779L114.322 230L143.675 200.706L73.0382 130.486Z' fill='%23141F2F'/%3E%3Cpath d='M116.609 86.9645L43.6858 159.741L73.0764 188.996L146 116.22L116.609 86.9645Z' fill='%23141F2F'/%3E%3Cpath d='M116.533 0L0 116.335L29.3906 145.59L145.924 29.2554L116.533 0Z' fill='%23141F2F'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              backgroundSize: isExpanded ? '146px 230px' : '105px 165px'
+            }}
+          >
             {formattedMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <h1 className={cn("font-bold mb-2", isExpanded ? "text-2xl" : "text-2xl leading-tight")}>
