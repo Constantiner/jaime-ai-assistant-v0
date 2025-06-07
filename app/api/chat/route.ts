@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     console.log(`📝 Chat request with ${messages.length} messages:`, 
       messages.map((msg: any) => ({
         role: msg.role,
-        content: msg.content ? `${msg.content.substring(0, 30)}${msg.content.length > 30 ? '...' : ''}` : '[empty]'
+        content: msg.parts ? `[contains parts]` : msg.content ? `${msg.content.substring(0, 30)}${msg.content.length > 30 ? '...' : ''}` : '[empty]'
       })));
     
     // Ensure we have an API key
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     // Create the stream text result
     const result = streamText({
       model: openai('gpt-4'),
+      system: 'You are Jaime, a helpful AI assistant.',
       messages,
     });
 

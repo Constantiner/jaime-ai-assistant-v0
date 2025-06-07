@@ -3,11 +3,12 @@
 interface AudioButtonProps {
   onClick: () => void
   className?: string
+  type?: "button" | "submit" | "reset"
 }
 
-export function AudioButton({ onClick, className = "" }: AudioButtonProps) {
+export function AudioButton({ onClick, className = "", type = "button" }: AudioButtonProps) {
   return (
-    <button onClick={onClick} className={`transition-all duration-200 ${className}`}>
+    <button type={type} onClick={onClick} className={`transition-all duration-200 ${className}`}>
       <svg width="36" height="37" viewBox="0 0 36 37" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g filter="url(#filter0_d_4004_1025)">
           <path
