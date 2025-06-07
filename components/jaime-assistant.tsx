@@ -361,31 +361,10 @@ export function JaimeAssistant() {
             }}
           >
             {formattedMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <h1 className={cn("font-bold mb-2", isExpanded ? "text-2xl" : "text-2xl leading-tight")}>
+              <div className="flex flex-col justify-end h-full pb-4">
+                <h1 className="font-semibold text-4xl mb-2 px-4">
                   {"Hi! I'm Jaime, your AI Assistant. How can I help?"}
                 </h1>
-                <div className={cn("flex flex-wrap gap-2", isExpanded ? "mt-8" : "mt-8 flex-col space-y-3")}>
-                  {SUGGESTED_PROMPTS.slice(0, 3).map((prompt, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className={cn(
-                        "bg-slate-700 border-slate-600 text-white hover:bg-slate-600",
-                        !isExpanded && "w-full text-left justify-start"
-                      )}
-                      onClick={() => handlePromptClick(prompt)}
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
-                  <Button
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => handlePromptClick("Talk to an expert")}
-                  >
-                    Talk to an expert
-                  </Button>
-                </div>
               </div>
             ) : (
               <div className={cn(isExpanded ? "space-y-6 max-w-4xl mx-auto" : "space-y-4")}>
@@ -489,7 +468,7 @@ export function JaimeAssistant() {
           {/* Suggested Prompts */}
           <div className={cn(
             "px-4 pb-2",
-            isExpanded ? "max-w-4xl mx-auto" : ""
+            isExpanded ? "max-w-4xl mx-auto w-full ml-2" : ""
           )}>
             <div className="mt-2 flex flex-wrap gap-2">
               {SUGGESTED_PROMPTS.map((prompt, index) => (
