@@ -459,34 +459,6 @@ export function JaimeAssistant() {
                             <Copy className="w-4 h-4" />
                           </Button>
                         </div>
-                        <div className={cn(
-                          isExpanded ? "flex flex-wrap gap-2" : "space-y-2"
-                        )}>
-                          {SUGGESTED_PROMPTS.slice(0, 3).map((prompt, index) => (
-                            <Button
-                              key={index}
-                              variant="outline"
-                              size="sm"
-                              className={cn(
-                                "bg-slate-700 border-slate-600 text-white hover:bg-slate-600",
-                                !isExpanded && "w-full text-left justify-start text-xs"
-                              )}
-                              onClick={() => handlePromptClick(prompt)}
-                            >
-                              {prompt}
-                            </Button>
-                          ))}
-                          <Button
-                            size="sm"
-                            className={cn(
-                              "bg-orange-500 hover:bg-orange-600 text-white",
-                              !isExpanded && "text-xs"
-                            )}
-                            onClick={() => handlePromptClick("Talk to an expert")}
-                          >
-                            Talk to an expert
-                          </Button>
-                        </div>
                       </div>
                     )}
                   </div>
@@ -504,6 +476,26 @@ export function JaimeAssistant() {
                 <div ref={messagesEndRef} />
               </div>
             )}
+          </div>
+
+          {/* Suggested Prompts */}
+          <div className={cn(
+            "px-4 pb-2",
+            isExpanded ? "max-w-4xl mx-auto" : ""
+          )}>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {SUGGESTED_PROMPTS.map((prompt, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-xs"
+                  onClick={() => handlePromptClick(prompt)}
+                >
+                  {prompt}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {/* Input Area */}
