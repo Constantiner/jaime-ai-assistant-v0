@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -11,6 +11,7 @@ import { ExpandButton } from "./expand-button"
 import { CloseButton } from "./close-button"
 import { SendTextButton } from "./send-text-button"
 import { AudioButton } from "./audio-button"
+import { useChat } from "@ai-sdk/react"
 
 interface Message {
   id: string
@@ -80,33 +81,102 @@ export function JaimeAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [showError, setShowError] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  // Initialize AI chat with AI SDK integration
+  const { messages: aiMessages, input, handleInputChange, handleSubmit, isLoading: aiLoading, error } = useChat({
+    api: "/api/chat",
+    id: "jaime-chat", // Use a consistent ID for the chat
+    initialInput: inputValue, // Connect the component's input value to the AI SDK
+    onError: (err) => {
+      console.error("AI SDK error:", err);
+      setErrorMessage(`Error: ${err.message || "Failed to get AI response"}`);
+    },
+    onResponse: (response) => {
+      if (!response.ok) {
+        console.error("AI API response not OK:", response.statusText);
+      } else {
+        console.log("AI response started streaming");
+      }
+    },
+    onFinish: () => {
+      console.log("AI response finished streaming");
+    }
+  })
+  
+  // Keep inputValue in sync with AI SDK input
+  useEffect(() => {
+    if (input !== inputValue) {
+      setInputValue(input);
+    }
+  }, [input]);
+
+  // Convert AI SDK messages to our app's message format
+  useEffect(() => {
+    if (aiMessages.length > 0) {
+      // Use client-side only to avoid hydration mismatch
+      if (typeof window !== 'undefined') {
+        const formattedMessages = aiMessages.map(msg => ({
+          id: msg.id,
+          type: msg.role === "user" ? "user" : "assistant",
+          content: msg.parts.map(part => {
+            if (part.type === "text") {
+              return part.text;
+            }
+            return "";
+          }).join(""),
+          // Use a consistent timestamp approach
+          timestamp: new Date(msg.createdAt || Date.now())
+        })) as Message[];
+        
+        setMessages(formattedMessages);
+      }
+    }
+  }, [aiMessages]);
+
+  // Update loading state
+  useEffect(() => {
+    setIsLoading(aiLoading);
+    if (aiLoading) {
+      console.log("AI is generating a response...");
+    }
+  }, [aiLoading]);
+  
+  // Handle errors from useChat
+  useEffect(() => {
+    if (error) {
+      console.error("Chat hook error:", error);
+      setErrorMessage(`Error: ${error.message || "Something went wrong"}`);
+    }
+  }, [error]);
 
   const handleSendMessage = (content: string) => {
     if (!content.trim()) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content,
-      timestamp: new Date(),
+    
+    // Clear any previous errors
+    setErrorMessage(null);
+    console.log("Sending message to AI:", content.substring(0, 30) + (content.length > 30 ? "..." : ""));
+    console.log("Current view:", isExpanded ? "expanded" : "collapsed");
+    
+    try {
+      // First update the input value in the AI SDK
+      handleInputChange({ target: { value: content } } as React.ChangeEvent<HTMLInputElement>);
+      
+      // Then submit the form
+      const formEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+      handleSubmit(formEvent);
+      
+      console.log("Message submitted successfully");
+      
+      // Clear the input field after sending
+      setInputValue("");
+    } catch (err) {
+      console.error("Error submitting message:", err);
+      setErrorMessage(`Failed to send message: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "assistant",
-        content:
-          "First Line Software is now a Select Implementation Partner of InterSystems, recognizing its expertise in healthcare IT solutions like HealthShare.\n\nPlease follow this link to find most relevant information or schedule a demo here.",
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, aiMessage])
-    }, 1000)
   }
 
   const handlePromptClick = (prompt: string) => {
@@ -459,17 +529,20 @@ export function JaimeAssistant() {
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Tell me about your company relationships with InterSystems"
                   className="flex-1 bg-transparent border-none text-white placeholder-slate-400 focus:ring-0"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" && inputValue.trim()) {
-                      handleSendMessage(inputValue)
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && inputValue.trim() && !isLoading) {
+                      e.preventDefault();
+                      handleSendMessage(inputValue);
                     }
                   }}
+                  disabled={isLoading}
                 />
                 <div className="flex items-center space-x-2">
                   <AudioButton onClick={handleVoiceToggle} />
                   <SendTextButton
                     hasText={inputValue.trim().length > 0}
                     onClick={() => handleSendMessage(inputValue)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -667,26 +740,37 @@ export function JaimeAssistant() {
       {/* Input Area */}
       <div className="p-4">
         <div className="flex items-center space-x-2 bg-slate-800 rounded-lg p-3 mb-2">
-          <Input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type here in any language or use audio mode..."
-            className="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 text-sm"
-            onKeyPress={(e) => {
-              if (e.key === "Enter" && inputValue.trim()) {
-                handleSendMessage(inputValue)
-              }
-            }}
-          />
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Type here in any language or use audio mode..."
+              className="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && inputValue.trim() && !isLoading) {
+                  e.preventDefault();
+                  handleSendMessage(inputValue);
+                }
+              }}
+              disabled={isLoading}
+            />
           <div className="flex items-center space-x-2">
             <AudioButton onClick={handleVoiceToggle} />
-            <SendTextButton hasText={inputValue.trim().length > 0} onClick={() => handleSendMessage(inputValue)} />
+            <SendTextButton hasText={inputValue.trim().length > 0} onClick={() => handleSendMessage(inputValue)} disabled={isLoading} />
           </div>
         </div>
+        {errorMessage && (
+          <div className="text-xs text-red-500 text-center font-medium mb-2 p-2 bg-red-100 rounded-md">
+            {errorMessage}
+          </div>
+        )}
         <div className="text-xs text-slate-500 text-center leading-tight">
-          Jaime is powered by Generative AI technology, which may produce inaccurate information. Please{" "}
-          <span className="underline cursor-pointer">contact our team</span> for any questions.
+          {isLoading ? (
+            <span className="text-blue-500">AI is thinking...</span>
+          ) : (
+            <>Jaime is powered by Generative AI technology, which may produce inaccurate information. Please{" "}
+            <span className="underline cursor-pointer">contact our team</span> for any questions.</>
+          )}
         </div>
       </div>
     </div>

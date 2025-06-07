@@ -4,11 +4,12 @@ interface SendTextButtonProps {
   hasText: boolean
   onClick: () => void
   className?: string
+  disabled?: boolean
 }
 
-export function SendTextButton({ hasText, onClick, className = "" }: SendTextButtonProps) {
+export function SendTextButton({ hasText, onClick, className = "", disabled = false }: SendTextButtonProps) {
   return (
-    <button onClick={onClick} disabled={!hasText} className={`transition-all duration-200 ${className}`}>
+    <button onClick={onClick} disabled={!hasText || disabled} className={`transition-all duration-200 ${className}`}>
       {hasText ? (
         // Orange icon when text is present
         <svg width="36" height="37" viewBox="0 0 36 37" fill="none" xmlns="http://www.w3.org/2000/svg">
