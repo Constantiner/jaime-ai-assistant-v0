@@ -361,13 +361,13 @@ export function JaimeAssistant() {
             }}
           >
             {formattedMessages.length === 0 ? (
-              <div className="flex flex-col justify-end h-full pb-4">
-                <h1 className="font-semibold text-4xl mb-2 px-4">
+              <div className={cn("flex flex-col justify-end h-full pb-4", isExpanded ? "max-w-4xl mx-auto w-full" : "")}>
+                <h1 className={cn("font-semibold text-4xl mb-2", isExpanded ? "" : "px-4")}>
                   {"Hi! I'm Jaime, your AI Assistant. How can I help?"}
                 </h1>
               </div>
             ) : (
-              <div className={cn(isExpanded ? "space-y-6 max-w-4xl mx-auto" : "space-y-4")}>
+              <div className={cn(isExpanded ? "space-y-6 max-w-4xl mx-auto w-full" : "space-y-4")}>
                 {formattedMessages.map((message) => (
                   <div key={message.id} className={isExpanded ? "space-y-4" : ""}>
                     {message.role === "user" && (
@@ -470,8 +470,8 @@ export function JaimeAssistant() {
 
           {/* Suggested Prompts */}
           <div className={cn(
-            "px-4 pb-2",
-            isExpanded ? "max-w-4xl mx-auto w-full ml-2" : ""
+            "pb-2",
+            isExpanded ? "max-w-4xl mx-auto w-full px-6" : "px-4"
           )}>
             <div className="mt-2 flex flex-wrap gap-2">
               {SUGGESTED_PROMPTS.map((prompt, index) => (
