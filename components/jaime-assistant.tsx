@@ -371,22 +371,27 @@ export function JaimeAssistant() {
                 {formattedMessages.map((message) => (
                   <div key={message.id} className={isExpanded ? "space-y-4" : ""}>
                     {message.role === "user" && (
-                      <div className="flex justify-end mb-4">
-                        <div className={cn(
-                          "bg-slate-700 rounded-lg",
-                          isExpanded ? "p-4 max-w-2xl" : "p-3 max-w-[280px]"
-                        )}>
-                          <div className="flex items-start space-x-3">
-                            <div className={cn(
-                              "bg-slate-600 rounded-full flex items-center justify-center text-xs",
-                              isExpanded ? "w-6 h-6" : "w-5 h-5 mt-0.5" 
-                            )}>
-                              {isExpanded ? "U" : <span className="text-slate-300">✏️</span>}
-                            </div>
-                            <div className={cn(
-                              "text-white",
-                              !isExpanded && "text-sm"
-                            )}>{message.content}</div>
+                      <div className="flex justify-start mb-4">
+                        <div className="flex items-start space-x-[5px]">
+                          <svg className="flex-shrink-0" width="36" height="39" viewBox="0 0 36 39" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g filter="url(#filter0_d_4010_2014)">
+                              <path d="M18 26.5H27M22.376 10.122C22.7741 9.72389 23.314 9.50024 23.877 9.50024C24.44 9.50024 24.9799 9.72389 25.378 10.122C25.7761 10.5201 25.9997 11.06 25.9997 11.623C25.9997 12.186 25.7761 12.7259 25.378 13.124L13.368 25.135C13.1301 25.3729 12.836 25.5469 12.513 25.641L9.64098 26.479C9.55493 26.5041 9.46372 26.5056 9.37689 26.4833C9.29006 26.4611 9.2108 26.4159 9.14742 26.3525C9.08404 26.2892 9.03887 26.2099 9.01662 26.1231C8.99437 26.0362 8.99588 25.945 9.02098 25.859L9.85898 22.987C9.9532 22.6643 10.1272 22.3706 10.365 22.133L22.376 10.122Z" stroke="#687389" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </g>
+                            <defs>
+                              <filter id="filter0_d_4010_2014" x="-6" y="-3.5" width="48" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                                <feOffset dy="2"/>
+                                <feGaussianBlur stdDeviation="3"/>
+                                <feComposite in2="hardAlpha" operator="out"/>
+                                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.01 0"/>
+                                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_4010_2014"/>
+                                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_4010_2014" result="shape"/>
+                              </filter>
+                            </defs>
+                          </svg>
+                          <div className="bg-[#1E293B] p-3 rounded-lg text-white text-[14px]">
+                            {message.content}
                           </div>
                         </div>
                       </div>
