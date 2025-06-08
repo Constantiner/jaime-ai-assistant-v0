@@ -11,7 +11,11 @@ import { AudioButton } from "./audio-button"
 import { CloseButton } from "./close-button"
 import { ChatHeader } from "./chat-header"
 import { ChatInputArea } from "./chat-input-area"
+import { Markdown } from "./markdown"
 
+// Interface declarations
+
+// Interface declarations
 interface Message {
   id: string
   role: "user" | "assistant"
@@ -400,14 +404,16 @@ export function JaimeAssistant() {
                     {message.role === "assistant" && (
                       <div className={isExpanded ? "" : "space-y-3"}>
                         <div className={cn(
-                          "text-white",
+                          "text-white w-full",
                           isExpanded ? "mb-4" : "text-sm leading-relaxed"
-                        )}>
-                          {message.content}
-                          {status === "streaming" && messages[messages.length - 1].role === "assistant" && 
-                           messages[messages.length - 1].id === message.id && (
-                            <span className="inline-block animate-pulse">▌</span>
-                          )}
+                        )} style={{ width: '100%', maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                          <div className="overflow-hidden" style={{ maxWidth: '100%' }}>
+                            <Markdown>{message.content}</Markdown>
+                            {status === "streaming" && messages[messages.length - 1].role === "assistant" && 
+                              messages[messages.length - 1].id === message.id && (
+                              <span className="inline-block animate-pulse">▌</span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2 mb-4">
                           <Button 
