@@ -77,7 +77,9 @@ export function JaimeAssistant() {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const [animationComplete, setAnimationComplete] = useState(true); // Track animation completion
+	const [isUserScrolling, setIsUserScrolling] = useState(false); // Track if user is scrolling
 
 	// Initialize chat with AI SDK
 	const { messages, input, handleInputChange, handleSubmit, append, stop, error, status, setInput } = useChat({
@@ -89,14 +91,63 @@ export function JaimeAssistant() {
 		},
 	});
 
-	// Scroll to bottom whenever messages change
-	useEffect(() => {
-		scrollToBottom();
-	}, [messages]);
+	// Check if user is at the bottom of the chat
+	const isUserAtBottom = () => {
+		const container = chatContainerRef.current;
+		if (!container) return true;
 
-	const scrollToBottom = () => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+		// In a flex-column-reverse container, "bottom" is actually the top (scrollTop near 0)
+		return container.scrollTop < 10;
 	};
+
+	// Scroll to bottom of chat
+	const scrollToBottom = () => {
+		if (chatContainerRef.current && !isUserScrolling) {
+			// In flex-column-reverse, scroll to bottom means scrolling to top (0)
+			chatContainerRef.current.scrollTop = 0;
+		}
+	};
+
+	// Scroll to bottom whenever messages change or when status changes
+	useEffect(() => {
+		// Only auto-scroll if user is at bottom or they just sent a message
+		if (messages.length > 0 && (isUserAtBottom() || messages[0]?.role === "user")) {
+			scrollToBottom();
+		}
+	}, [messages, status]);
+
+	// Handle scroll events to detect user scrolling
+	useEffect(() => {
+		const container = chatContainerRef.current;
+		if (!container) return;
+
+		const handleScroll = () => {
+			// Only consider it user scrolling if they've explicitly scrolled away from bottom
+			const isAtBottom = isUserAtBottom();
+			if (!isAtBottom) {
+				setIsUserScrolling(true);
+			} else if (isUserScrolling && isAtBottom) {
+				// If they scrolled back to bottom, reset the flag
+				setIsUserScrolling(false);
+			}
+		};
+
+		container.addEventListener("scroll", handleScroll);
+		return () => {
+			container.removeEventListener("scroll", handleScroll);
+		};
+	}, [isUserScrolling]);
+
+	// Reset userScrolling when user explicitly sends a message
+	useEffect(() => {
+		// In a reversed layout, we need to check if the newest message is from the user
+		const latestMessage = messages[0];
+		if (messages.length > 0 && latestMessage?.role === "user") {
+			setIsUserScrolling(false);
+			// Ensure immediate scroll to bottom after sending a message
+			setTimeout(scrollToBottom, 0);
+		}
+	}, [messages]);
 
 	// Helper function to format AI SDK messages to UI messages
 	const formattedMessages = messages.map((msg) => ({
@@ -105,6 +156,34 @@ export function JaimeAssistant() {
 		content: msg.content,
 		timestamp: new Date(msg.createdAt || Date.now()),
 	}));
+
+	// Scroll to bottom when AI begins typing (status becomes "submitted")
+	useEffect(() => {
+		if (status === "submitted" && messages.length > 0 && messages[0].role === "user") {
+			// Ensure we scroll to see the "Writing..." indicator
+			setTimeout(scrollToBottom, 0);
+		}
+	}, [status]);
+
+	// Handle window resize events
+	useEffect(() => {
+		let resizeTimeout: NodeJS.Timeout;
+
+		const handleResize = () => {
+			clearTimeout(resizeTimeout);
+			resizeTimeout = setTimeout(() => {
+				if (!isUserScrolling) {
+					scrollToBottom();
+				}
+			}, 100);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			clearTimeout(resizeTimeout);
+		};
+	}, [isUserScrolling]);
 
 	// Handle clicking on a suggested prompt
 	const handlePromptClick = (prompt: string) => {
@@ -312,8 +391,9 @@ export function JaimeAssistant() {
 
 					{/* Chat Messages */}
 					<div
+						ref={chatContainerRef}
 						className={cn(
-							"flex-1 overflow-y-auto relative bg-no-repeat bg-center",
+							"flex-1 overflow-y-auto relative bg-no-repeat bg-center flex flex-col-reverse",
 							isExpanded ? "p-6" : "p-4"
 						)}
 						style={{
@@ -333,11 +413,26 @@ export function JaimeAssistant() {
 								</h1>
 							</div>
 						) : (
-							<div className={cn(isExpanded ? "space-y-6 max-w-4xl mx-auto w-full" : "space-y-4")}>
-								{formattedMessages.map((message) => (
-									<div key={message.id} className={isExpanded ? "space-y-4" : ""}>
+							<div
+								className={cn(
+									"flex flex-col-reverse",
+									isExpanded
+										? "space-y-6 space-y-reverse max-w-4xl mx-auto w-full"
+										: "space-y-4 space-y-reverse"
+								)}
+							>
+								{status === "submitted" &&
+									formattedMessages.length > 0 &&
+									formattedMessages[0].role === "user" && (
+										<div className="flex items-center space-x-2 animate-pulse mb-6 ml-1 mt-2">
+											<div className="w-4 h-4 bg-white rounded-full"></div>
+											<div className="text-white">Writing...</div>
+										</div>
+									)}
+								{[...formattedMessages].reverse().map((message) => (
+									<div key={message.id} className={isExpanded ? "space-y-4 mb-4" : "mb-4"}>
 										{message.role === "user" && (
-											<div className="flex justify-start mb-4">
+											<div className="flex justify-start">
 												<div className="flex items-start space-x-[5px]">
 													<svg
 														className="flex-shrink-0"
@@ -411,9 +506,11 @@ export function JaimeAssistant() {
 												>
 													<div className="overflow-hidden max-w-full">
 														<Markdown>{message.content}</Markdown>
+														{/* The latest message being streamed will be the first one in our reversed list */}
 														{status === "streaming" &&
-															messages[messages.length - 1].role === "assistant" &&
-															messages[messages.length - 1].id === message.id && (
+															messages.find((msg) => msg.id === message.id)?.role ===
+																"assistant" &&
+															messages[0].id === message.id && (
 																<span className="inline-block animate-pulse">▌</span>
 															)}
 													</div>
@@ -465,15 +562,7 @@ export function JaimeAssistant() {
 									</div>
 								))}
 
-								{status === "submitted" &&
-									formattedMessages.length > 0 &&
-									formattedMessages[formattedMessages.length - 1].role === "user" && (
-										<div className="flex items-center space-x-2 animate-pulse">
-											<div className="w-4 h-4 bg-white rounded-full"></div>
-											<div className="text-white">Writing...</div>
-										</div>
-									)}
-								<div ref={messagesEndRef} />
+								<div ref={messagesEndRef} className="h-0 w-full" />
 							</div>
 						)}
 					</div>
@@ -506,10 +595,13 @@ export function JaimeAssistant() {
 								if (status === "streaming") {
 									stop();
 								} else if (content.trim()) {
+									// Reset scrolling flag when sending a message
+									setIsUserScrolling(false);
 									append({
 										role: "user",
 										content: content,
 									});
+									setTimeout(scrollToBottom, 0);
 								}
 							}}
 							isExpanded={isExpanded}
