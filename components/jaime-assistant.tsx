@@ -157,14 +157,9 @@ export function JaimeAssistant() {
 	return (
 		<motion.div
 			className={cn(
-				"text-white flex flex-col rounded-2xl overflow-hidden shadow-[0_0_25px_3px_rgba(246,141,46,0.7)]",
-				isExpanded ? "fixed inset-5" : "relative"
+				"text-white flex flex-col rounded-2xl overflow-hidden shadow-[0_0_25px_3px_rgba(246,141,46,0.7)] bg-[#0F1827]",
+				isExpanded ? "fixed inset-5 w-auto h-auto" : "relative w-[400px] h-[718px]"
 			)}
-			style={{
-				backgroundColor: "#0F1827",
-				width: isExpanded ? "auto" : "400px",
-				height: isExpanded ? "auto" : "718px",
-			}}
 			animate={{
 				scale: 1,
 				transition: isExpanded ? expandSpringTransition : { duration: 0 },
@@ -177,7 +172,7 @@ export function JaimeAssistant() {
 				{isExpanded && (
 					<div className="w-96 bg-slate-800 flex flex-col shrink-0">
 						{/* Sidebar Header */}
-						<div className="p-4" style={{ backgroundColor: "#030B16" }}>
+						<div className="p-4 bg-[#030B16]">
 							<div className="flex items-center mb-4">
 								<div className="flex items-center space-x-2">
 									<JaimeLogo className="w-6 h-6" />
@@ -225,7 +220,7 @@ export function JaimeAssistant() {
 						</div>
 
 						{/* Chat History */}
-						<ScrollArea className="flex-1 p-4" style={{ backgroundColor: "#030B16" }}>
+						<ScrollArea className="flex-1 p-4 bg-[#030B16]">
 							{(() => {
 								const groups = groupChatsByTime(CHAT_HISTORY);
 								return (
@@ -317,11 +312,12 @@ export function JaimeAssistant() {
 
 					{/* Chat Messages */}
 					<div
-						className={cn("flex-1 overflow-y-auto relative", isExpanded ? "p-6" : "p-4")}
+						className={cn(
+							"flex-1 overflow-y-auto relative bg-no-repeat bg-center",
+							isExpanded ? "p-6" : "p-4"
+						)}
 						style={{
 							backgroundImage: `url("data:image/svg+xml,%3Csvg width='146' height='230' viewBox='0 0 146 230' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M73.0382 130.486L43.6858 159.779L114.322 230L143.675 200.706L73.0382 130.486Z' fill='%23141F2F'/%3E%3Cpath d='M116.609 86.9645L43.6858 159.741L73.0764 188.996L146 116.22L116.609 86.9645Z' fill='%23141F2F'/%3E%3Cpath d='M116.533 0L0 116.335L29.3906 145.59L145.924 29.2554L116.533 0Z' fill='%23141F2F'/%3E%3C/svg%3E")`,
-							backgroundRepeat: "no-repeat",
-							backgroundPosition: "center",
 							backgroundSize: isExpanded ? "146px 230px" : "105px 165px",
 						}}
 					>
@@ -409,17 +405,11 @@ export function JaimeAssistant() {
 											<div className={isExpanded ? "" : "space-y-3"}>
 												<div
 													className={cn(
-														"text-white w-full",
+														"text-white w-full max-w-full break-words",
 														isExpanded ? "mb-4" : "text-sm leading-relaxed"
 													)}
-													style={{
-														width: "100%",
-														maxWidth: "100%",
-														wordBreak: "break-word",
-														overflowWrap: "break-word",
-													}}
 												>
-													<div className="overflow-hidden" style={{ maxWidth: "100%" }}>
+													<div className="overflow-hidden max-w-full">
 														<Markdown>{message.content}</Markdown>
 														{status === "streaming" &&
 															messages[messages.length - 1].role === "assistant" &&
