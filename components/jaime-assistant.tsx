@@ -2,15 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { motion } from "framer-motion";
-import { Copy, MoreHorizontal, Star, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { markdownToTxt } from "markdown-to-txt";
+import { Check, Copy, MoreHorizontal, Star, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ChatHeader } from "./chat-header";
 import { ChatInputArea } from "./chat-input-area";
 import { JaimeLogo } from "./jaime-logo";
 import { Markdown } from "./markdown";
+import { MarkdownToHtml } from "./markdown-to-html";
 
 // Interface declarations
 interface Message {
@@ -80,6 +83,107 @@ export function JaimeAssistant() {
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const [animationComplete, setAnimationComplete] = useState(true); // Track animation completion
 	const [isUserScrolling, setIsUserScrolling] = useState(false); // Track if user is scrolling
+	const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+	const [messageToConvert, setMessageToConvert] = useState<Message | null>(null); // Message to convert to HTML
+
+	// Handle capturing the HTML output from the MarkdownToHtml component
+	const handleHtmlCapture = useCallback(
+		async (html: string) => {
+			if (!messageToConvert) return;
+
+			try {
+				// Get the message we want to copy
+				const message = messageToConvert;
+
+				// For plain text - convert markdown to clean text using markdown-to-txt
+				// Make sure to properly process the plain text to handle line breaks and other formatting
+				const plainText = markdownToTxt(message.content)
+					.replace(/\n\n/g, "\n") // Replace double newlines with single newlines
+					.replace(/\s+\n/g, "\n") // Remove extra spaces before newlines
+					.replace(/\n\s+/g, "\n") // Remove extra spaces after newlines
+					.trim(); // Remove leading/trailing whitespace
+
+				// For rich text (HTML) - use the captured HTML from the MarkdownToHtml component
+				// Ensure HTML is properly formatted for clipboard
+				const htmlContent = `<div class="markdown-wrapper">${html}</div>`;
+
+				try {
+					if (navigator.clipboard && window.ClipboardItem) {
+						// Write directly using the format you suggested
+						await navigator.clipboard.write([
+							new ClipboardItem({
+								'text/plain': new Blob([plainText], {
+									type: 'text/plain',
+								}),
+								'text/html': new Blob(
+									[htmlContent],
+									{
+										type: 'text/html',
+									}
+								),
+							}),
+						]);
+					} else {
+						// Fallback for browsers without ClipboardItem support
+						await navigator.clipboard.writeText(plainText);
+					}
+				} catch (clipboardError) {
+					console.error("Clipboard API failed:", clipboardError);
+
+					// Try more basic clipboard method
+					try {
+						// Create a temporary textarea element to copy the text
+						const textArea = document.createElement("textarea");
+						textArea.value = plainText;
+						textArea.style.position = "fixed";
+						textArea.style.left = "-999999px";
+						textArea.style.top = "-999999px";
+						document.body.appendChild(textArea);
+						textArea.focus();
+						textArea.select();
+						const copied = document.execCommand("copy");
+						document.body.removeChild(textArea);
+
+						if (!copied) {
+							throw new Error("execCommand copy failed");
+						}
+					} catch (fallbackError) {
+						console.error("Fallback clipboard method failed:", fallbackError);
+					}
+				}
+
+				// Set copied state for UI feedback
+				setCopiedMessageId(message.id);
+				setTimeout(() => setCopiedMessageId(null), 2000);
+
+				// Clear the message to convert
+				setMessageToConvert(null);
+			} catch (err) {
+				console.error("Failed to copy: ", err);
+				setMessageToConvert(null);
+			}
+		},
+		[messageToConvert]
+	);
+
+	// Function to copy message content in both plain text and HTML format
+	const copyToClipboard = (message: Message) => {
+		// Show immediate feedback that we're processing
+		setCopiedMessageId("processing");
+
+		// Set the message to convert - this will trigger the MarkdownToHtml component to render
+		setMessageToConvert(message);
+
+		// Set a timeout to reset the copied state if the operation takes too long
+		const timeoutId = setTimeout(() => {
+			if (copiedMessageId === "processing") {
+				setCopiedMessageId(null);
+				console.error("Copy operation timed out");
+			}
+		}, 3000);
+
+		return () => clearTimeout(timeoutId);
+	};
 
 	// Initialize chat with AI SDK
 	const { messages, input, handleInputChange, handleSubmit, append, stop, error, status, setInput } = useChat({
@@ -546,16 +650,35 @@ export function JaimeAssistant() {
 													>
 														<Star className="w-4 h-4" />
 													</Button>
-													<Button
-														variant="ghost"
-														size="icon"
-														className={cn(
-															"text-slate-400 hover:text-white",
-															!isExpanded && "w-8 h-8"
-														)}
-													>
-														<Copy className="w-4 h-4" />
-													</Button>
+													<TooltipProvider>
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	className={cn(
+																		"text-slate-400 hover:text-white",
+																		!isExpanded && "w-8 h-8"
+																	)}
+																	onClick={() => copyToClipboard(message)}
+																	id={`copy-button-${message.id}`}
+																>
+																	{copiedMessageId === message.id ? (
+																		<Check className="w-4 h-4 text-green-500" />
+																	) : copiedMessageId === "processing" ? (
+																		<span className="w-4 h-4 animate-pulse">
+																			...
+																		</span>
+																	) : (
+																		<Copy className="w-4 h-4" />
+																	)}
+																</Button>
+															</TooltipTrigger>
+															<TooltipContent>
+																<p>Copy message</p>
+															</TooltipContent>
+														</Tooltip>
+													</TooltipProvider>
 												</div>
 											</div>
 										)}
@@ -610,6 +733,11 @@ export function JaimeAssistant() {
 					</div>
 				</div>
 			</div>
+
+			{/* Hidden component to convert markdown to HTML */}
+			{messageToConvert && (
+				<MarkdownToHtml markdown={messageToConvert.content} onHtmlCapture={handleHtmlCapture} />
+			)}
 		</motion.div>
 	);
 }
