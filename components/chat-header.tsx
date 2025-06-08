@@ -28,7 +28,7 @@ export function ChatHeader({ isExpanded, onToggleExpand, onClose = () => {} }: C
             isExpanded={isExpanded} 
             onClick={onToggleExpand}
           />
-          <CloseButton onClick={onClose} />
+          {/* <CloseButton onClick={onClose} /> */}
         </div>
       </div>
 
