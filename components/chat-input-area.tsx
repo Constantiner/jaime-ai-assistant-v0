@@ -2,13 +2,11 @@ import { useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { SendTextButton } from "./send-text-button"
-import { AudioButton } from "./audio-button"
 
 interface ChatInputAreaProps {
   inputValue: string
   setInputValue: (value: string) => void
   handleSendMessage: (content: string) => void
-  handleVoiceToggle: () => void
   isExpanded: boolean
   errorMessage: string | null
 }
@@ -17,7 +15,6 @@ export function ChatInputArea({
   inputValue,
   setInputValue,
   handleSendMessage,
-  handleVoiceToggle,
   isExpanded,
   errorMessage
 }: ChatInputAreaProps) {
@@ -50,7 +47,7 @@ export function ChatInputArea({
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={isExpanded 
               ? "Tell me about your company relationships with InterSystems" 
-              : "Type here in any language or use audio mode..."
+              : "Type here in any language..."
             }
             className={cn(
               "flex-1 bg-transparent border-none text-white focus:ring-0",
@@ -66,7 +63,6 @@ export function ChatInputArea({
             }}
           />
           <div className="flex items-center space-x-2">
-            <AudioButton onClick={handleVoiceToggle} type="button" />
             <SendTextButton
               hasText={inputValue.trim().length > 0}
               disabled={!inputValue.trim()}

@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Star, Trash2, ThumbsUp, ThumbsDown, Copy, MoreHorizontal, ArrowUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { JaimeLogo } from "./jaime-logo"
-import { AudioButton } from "./audio-button"
 import { CloseButton } from "./close-button"
 import { ChatHeader } from "./chat-header"
 import { ChatInputArea } from "./chat-input-area"
@@ -78,8 +77,6 @@ const CHAT_HISTORY: ChatHistory[] = [
 
 export function JaimeAssistant() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isVoiceMode, setIsVoiceMode] = useState(false)
-  const [isListening, setIsListening] = useState(false)
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -135,19 +132,6 @@ export function JaimeAssistant() {
     }
   }
 
-  // Handle voice mode toggle
-  const handleVoiceToggle = () => {
-    setIsVoiceMode(!isVoiceMode)
-    if (!isVoiceMode) {
-      setIsListening(true)
-      // Simulate voice listening
-      setTimeout(() => {
-        setIsListening(false)
-        setIsVoiceMode(false)
-      }, 3000)
-    }
-  }
-
   // Group chats by time period for sidebar organization
   const groupChatsByTime = (chats: ChatHistory[]) => {
     const now = new Date()
@@ -163,25 +147,6 @@ export function JaimeAssistant() {
 
     return groups
   }
-
-  // Voice waveform component
-  const VoiceWaveform = () => (
-    <div className="flex items-center justify-center space-x-1">
-      {[...Array(5)].map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "bg-blue-500 rounded-full transition-all duration-300",
-            isListening ? "animate-pulse" : "",
-            i === 0 || i === 4 ? "w-2 h-8" : i === 1 || i === 3 ? "w-2 h-16" : "w-2 h-24",
-          )}
-          style={{
-            animationDelay: `${i * 0.1}s`,
-          }}
-        />
-      ))}
-    </div>
-  )
 
   return (
     <div
@@ -324,35 +289,6 @@ export function JaimeAssistant() {
             onToggleExpand={() => setIsExpanded(!isExpanded)}
             onClose={() => {}}
           />
-
-          {/* Voice Mode Overlay */}
-          {isVoiceMode && (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center z-50"
-              style={{ backgroundColor: "#0F1827" }}
-            >
-              <div className="mb-8">
-                <VoiceWaveform />
-              </div>
-              <div className="flex space-x-4">
-                <Button
-                  size="lg"
-                  className="w-16 h-16 rounded-full bg-orange-500 hover:bg-orange-600"
-                  onClick={handleVoiceToggle}
-                >
-                  <AudioButton onClick={() => {}} className="w-8 h-8" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-16 h-16 rounded-full border-slate-600 text-white hover:bg-slate-700"
-                  onClick={() => setIsVoiceMode(false)}
-                >
-                  <CloseButton onClick={() => setIsVoiceMode(false)} className="w-8 h-8" />
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Chat Messages */}
           <div 
@@ -511,7 +447,6 @@ export function JaimeAssistant() {
                   })
                 }
               }}
-              handleVoiceToggle={handleVoiceToggle}
               isExpanded={isExpanded}
               errorMessage={error ? error.message || "Something went wrong" : null}
             />
